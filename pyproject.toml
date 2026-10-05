@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "HyProxy"
+version = "0.1.0"
+description = "An asynchronous HTTP, SOCKS4, and SOCKS5 proxy server."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "haytam.cho", email = "charcaouhaitam1@gmail.com" },
+]
+dependencies = [
+    "aiodns>=3.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: Proxy Servers",
+]
+keywords = ["asyncio", "http", "proxy", "socks4", "socks5"]
+
+[project.urls]
+Homepage = "https://github.com/Arcade-m7/HyProxy"
+Repository = "https://github.com/Arcade-m7/HyProxy"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.setuptools.packages.find]
+include = ["hyproxy*"]
