@@ -35,7 +35,7 @@ class Policy:
         """
         for rule in self.rules:
             if rule(info) :
-                return bool(rule.action)
+                return bool(rule.action.value)
         return True
 
     def addrule(self,rule:SimpleRule):

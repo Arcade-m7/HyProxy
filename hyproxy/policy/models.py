@@ -49,6 +49,8 @@ class DOMAIN:
         self.domain = domain
     
     def __eq__(self, value):
+        if not value:
+            return False
         search = findall(self.domain,value.domain)
         return value.domain in search
     
