@@ -3,6 +3,7 @@ from asyncio import gather, run
 class Event:
 
     events = []
+    isrunning = None
 
     @classmethod
     async def __ini__(cls):
@@ -20,6 +21,12 @@ class Event:
 
     @classmethod
     def run(cls):
+        cls.isrunning = True
         run(
             cls.__ini__()
         )
+
+    @classmethod
+    def stop(cls):
+        cls.isrunning = False
+        pass
