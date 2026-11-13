@@ -1,6 +1,8 @@
 from .models import DnsCache
 from .utils import isipaddress
 
+from ...event import Event
+
 from aiodns import DNSResolver
 from re import match
 from asyncio import Lock, sleep, gather
@@ -37,12 +39,16 @@ async def resolveboth(domain):
     )
 
 async def garbageCollector():
-    while True:
+    while Event.isrunning != False:
+        print(TTL)
         await sleep(TTL)
+        index = 0
         for ipcache in [DnsCache.ipv4, DnsCache.ipv6]:
-            for domain, table in ipcache.items():
-                if table.tte >= time():
-                    ipcache.pop(domain)
+            cache = list(ipcache.items())
+            domain, table = cache[index]
+            if table.tte > time():
+                ipcache.pop(domain)
+            index += 1
 
 def check(domain):
     """
@@ -56,4 +62,10 @@ def check(domain):
     """
     return match(r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$", domain)
 
-    
+def setttl(ttl: int):
+    global TTL
+    TTL = ttl
+
+def setnameservers(ips: list[str]):
+    global NAMESERVER
+    NAMESERVER = ips

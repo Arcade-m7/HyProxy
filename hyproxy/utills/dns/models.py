@@ -30,3 +30,5 @@ class DnsCache:
     def getfromcache(cls, qtype: str, domain: str):
         ipcache = cls.ipv4 if qtype == 'A' else cls.ipv6
         return ipcache.get(domain)
+
+    
