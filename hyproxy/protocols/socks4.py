@@ -116,7 +116,7 @@ class SOCKS4(BaseProtocol):
             match CD:
                 case 90:
                     await tunnel.src.sendbuffer(buffer, count=False)
-                    await tunnel.call()
+                    await tunnel.call(120)
 
                 case 91:
                     await tunnel.src.sendbuffer(buffer, end=True, count=False)
@@ -132,7 +132,7 @@ class SOCKS4(BaseProtocol):
                     int(0).to_bytes(2,'big'),
                     ipaddress.pack(DSTIP),
                 ]
-            ), end=True, count=False); print("hell wrold")
+            ), end=True, count=False)
         
         # THIS PART FOR HANDLING THE BIND COMMAND
         """elif commandcode == 2 and self.support_commands.get(commandcode): #here should be the bind command. coming soon
