@@ -62,7 +62,7 @@ def check(domain):
     """
     return match(r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$", domain)
 
-def setttl(ttl: int):
+def set_ttl(ttl: int):
     global TTL
     TTL = ttl
 
