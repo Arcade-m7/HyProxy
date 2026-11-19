@@ -41,7 +41,7 @@ class HTTP101(BaseProtocol):
         self.auth = b64encode(self.config.auth.username + b":" + self.config.auth.password) if self.config.auth.username and self.config.auth.password else None
         self.authreq = True if self.auth else False
 
-    async def connect(self,request: REQUEST, tunnel: Tunnel):
+    async def connect(self, request: REQUEST, tunnel: Tunnel):
         """
         Handle an HTTP CONNECT request by establishing a TCP tunnel to the target.
         params:
@@ -200,8 +200,8 @@ class HTTP101(BaseProtocol):
         """
 
         if CRLF not in raw:
-            err,buffer = await tunnel.src.recvuntil(CRLF,count=False)
-            if err: tunnel.src.close() ; tunnel.record('failed to receive request');return
+            err, buffer = await tunnel.src.recvuntil(CRLF, count=False)
+            if err: tunnel.src.close() ; tunnel.record('failed to receive request'); return
             raw += buffer
 
         try:
@@ -251,7 +251,7 @@ class HTTP101(BaseProtocol):
         match request.method:
 
             case b"CONNECT":
-                await self.connect(request,tunnel)
+                await self.connect(request, tunnel)
 
             case _:
-                await self.othermethod(request,tunnel)
+                await self.othermethod(request, tunnel)
