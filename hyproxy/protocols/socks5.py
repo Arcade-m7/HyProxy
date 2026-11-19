@@ -66,8 +66,6 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
             Exception : general error during request processing
         """
         #=================== (1) identifier/method =================== +
-
-        request = BytesIO(buffer)
         """
         +----+----------+----------+
         |VER | NMETHODS | METHODS  |
@@ -76,13 +74,18 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
         +----+----------+----------+
         """
         
-        VER = request.read(1)
+        VER = buffer
 
         if VER != b"\x05":
             tunnel.src.close() ; tunnel.record("bad version socks5 version received") ; return
 
-        NMETHODS = integer.fromBytes(request.read(1))
-        METHODS = list(request.read(NMETHODS))
+        NMETHODS = integer.fromBytes(
+            await tunnel.src.recvexactly(1, False, True)
+        )
+
+        METHODS = list(await tunnel.src.recvexactly(NMETHODS, False, True))
+
+        print(METHODS)
 
         method = None
 
@@ -94,6 +97,7 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
         
         if method is None and 80 in METHODS:
             method = 80 if self.privatemethod else None
+
         #=================== (1) identifier/method =================== -
 
         #=================== (2) METHOD SELECTION MESSAGE =================== +
@@ -112,7 +116,7 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
             ]
         )
 
-        await tunnel.src.sendbuffer(response, count=False)
+        await tunnel.src.sendbuffer(response, count=False, raiserror=True)
 
         match method:
             case 0: # NO AUTHENTICATION REQUIRED
@@ -126,25 +130,22 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
                 | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
                 +----+------+----------+------+----------+
                 """
-                err,response = await tunnel.src.recvbuffer() ; request = BytesIO(response)
-
-                if err : tunnel.src.close() ; tunnel.record(str(err)) ; return
                 
-                VER = request.read(1)
+                VER = await tunnel.src.recvexactly(1, False, True)
                 
                 if VER != b"\x01":
                     tunnel.src.close() ; tunnel.record(f"bad auth version recvied {VER}") ; return
-                
+
                 ULEN = integer.fromBytes(
-                    request.read(1)
+                    await tunnel.src.recvexactly(1, False, True)
                 )
 
-                UNAME = request.read(ULEN)
+                UNAME = await tunnel.src.recvexactly(ULEN, False, True)
                 PLEN = integer.fromBytes(
-                    request.read(1)
+                    await tunnel.src.recvexactly(1, False, True)
                 )
 
-                PASSWD = request.read(PLEN)
+                PASSWD = await tunnel.src.recvexactly(PLEN, False, True)
                 status = 0 if self.username == UNAME and self.password == PASSWD else 2
 
                 """
@@ -196,26 +197,23 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
              o  IP V6 address: X'04'
 
         """       
-        err, request = await tunnel.src.recvbuffer() ; request = BytesIO(request)
 
-        if err : tunnel.src.close() ; tunnel.record(str(err)) ; return
-
-        VER = request.read(1)
+        VER = await tunnel.src.recvexactly(1, False, True)
 
         if VER != b"\x05":
             tunnel.src.close() ; tunnel.record(f"bad Version recved {VER}") ; return
 
         CMD = integer.fromBytes(
-            request.read(1)
+            await tunnel.src.recvexactly(1, False, True)
         )
  
-        RSV = request.read(1)
+        RSV = await tunnel.src.recvexactly(1, False, True)
 
         if RSV != b"\x00":
             tunnel.src.close() ; tunnel.record('invalid reserved field') ; return
-        
+
         ATYP = integer.fromBytes(
-            request.read(1)
+            await tunnel.src.recvexactly(1, False, True)
         )
 
         BoundAddress = tunnel.src.laddr
@@ -225,24 +223,27 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
         match ATYP:
 
             case 1:
-                DSTADDR = ipaddress.unpack(request.read(4))
+                error, data = await tunnel.src.recvexactly(4, False)
+                DSTADDR = ipaddress.unpack(data)
 
             case 4:
-                DSTADDR = ipaddress.unpack(request.read(16))
+                error, data = await tunnel.src.recvexactly(16, False)
+                DSTADDR = ipaddress.unpack(data)
 
             case 3:
 
-                DOMLEN = integer.fromBytes(request.read(1))
+                error, data = await tunnel.src.recvexactly(1, False)
+                DOMLEN = integer.fromBytes(data)
 
-                DSTDOMAIN = request.read(DOMLEN).decode()
+                DSTDOMAIN = (await tunnel.src.recvexactly(DOMLEN, False, True)).decode()
 
-                DSTADDR = (await self.dnsrb(DSTDOMAIN)) if dns.check(DSTDOMAIN) and self.config.connection.dns.isenabled else None
+                DSTADDR = (await self.dnsrb(DSTDOMAIN)) if self.config.connection.dns.isenabled else None
 
             case _:
 
                 DSTADDR = None
 
-        DSTPORT = integer.fromBytes(request.read(2)) if DSTADDR else 0
+        DSTPORT = integer.fromBytes(await tunnel.src.recvexactly(2, False, True)) if DSTADDR else 0
 
         if not self.atyp(ATYP,(DSTDOMAIN or DSTADDR)):
             
@@ -332,7 +333,7 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
 
                 case 0:
                     await tunnel.src.sendbuffer(response,count=False)
-                    await tunnel.call(180)
+                    await tunnel.call(120)
 
                 case _:
                     await tunnel.src.sendbuffer(response,end=True,count=False) ; tunnel.record(f'connection to destionation error reply code {replyCode}') ; return 
