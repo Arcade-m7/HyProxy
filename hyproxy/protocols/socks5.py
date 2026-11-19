@@ -85,8 +85,6 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
 
         METHODS = list(await tunnel.src.recvexactly(NMETHODS, False, True))
 
-        print(METHODS)
-
         method = None
 
         if 0 in METHODS :
@@ -223,24 +221,19 @@ class SOCKS5(BaseProtocol): # messing GSSAPI and IANA ASSIGNED
         match ATYP:
 
             case 1:
-                error, data = await tunnel.src.recvexactly(4, False)
-                DSTADDR = ipaddress.unpack(data)
+                DSTADDR = ipaddress.unpack(await tunnel.src.recvexactly(4, False, True))
 
             case 4:
-                error, data = await tunnel.src.recvexactly(16, False)
-                DSTADDR = ipaddress.unpack(data)
+                DSTADDR = ipaddress.unpack(await tunnel.src.recvexactly(4, False, True))
 
             case 3:
-
-                error, data = await tunnel.src.recvexactly(1, False)
-                DOMLEN = integer.fromBytes(data)
+                DOMLEN = integer.fromBytes(await tunnel.src.recvexactly(1, False, True))
 
                 DSTDOMAIN = (await tunnel.src.recvexactly(DOMLEN, False, True)).decode()
 
                 DSTADDR = (await self.dnsrb(DSTDOMAIN)) if self.config.connection.dns.isenabled else None
 
             case _:
-
                 DSTADDR = None
 
         DSTPORT = integer.fromBytes(await tunnel.src.recvexactly(2, False, True)) if DSTADDR else 0
